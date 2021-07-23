@@ -14,6 +14,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+pub use self::erc20::Erc20;
 use ink_lang as ink;
 
 #[ink::contract]
@@ -23,6 +24,7 @@ mod erc20 {
         collections::HashMap as StorageHashMap,
         lazy::Lazy,
     };
+    use ink_prelude::string::String;
 
     /// A simple ERC-20 contract.
     #[ink(storage)]
@@ -34,6 +36,10 @@ mod erc20 {
         /// Mapping of the token amount which an account is allowed to withdraw
         /// from another account.
         allowances: StorageHashMap<(AccountId, AccountId), Balance>,
+        /// Token name
+        name: Lazy<String>,
+        /// Token symbol (ticker)
+        symbol: Lazy<String>,
     }
 
     /// Event emitted when a token transfer occurs.
@@ -73,7 +79,7 @@ mod erc20 {
     impl Erc20 {
         /// Creates a new ERC-20 contract with the specified initial supply.
         #[ink(constructor)]
-        pub fn new(initial_supply: Balance) -> Self {
+        pub fn new(name: String, symbol: String, initial_supply: Balance) -> Self {
             let caller = Self::env().caller();
             let mut balances = StorageHashMap::new();
             balances.insert(caller, initial_supply);
@@ -81,12 +87,15 @@ mod erc20 {
                 total_supply: Lazy::new(initial_supply),
                 balances,
                 allowances: StorageHashMap::new(),
+                name: Lazy::new(name),
+                symbol: Lazy::new(symbol),
             };
             Self::env().emit_event(Transfer {
                 from: None,
                 to: Some(caller),
                 value: initial_supply,
             });
+
             instance
         }
 
@@ -202,6 +211,27 @@ mod erc20 {
                 value,
             });
             Ok(())
+        }
+    }
+
+    /// The IERC20Metadata (https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/extensions/IERC20Metadata.sol)
+    impl Erc20 {
+        /// Returns the token name.
+        #[ink(message)]
+        pub fn name(&self) -> String {
+            (*self.name).clone()
+        }
+
+        /// Returns the token name.
+        #[ink(message)]
+        pub fn symbol(&self) -> String {
+            (*self.symbol).clone()
+        }
+
+        /// Returns the decimal places of the token.
+        #[ink(message)]
+        pub fn decimals(&self) -> u8 {
+            18
         }
     }
 
