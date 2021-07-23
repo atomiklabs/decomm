@@ -11,10 +11,10 @@ describe("ERC20", () => {
   });
 
   async function setup({
-    tokenName = 'Atomikoin',
-    tokenSymbol = 'ATK',
-    tokenInitialSupply = 1000
-  } = {}) {
+                         tokenName = 'Atomikoin',
+                         tokenSymbol = 'ATK',
+                         tokenInitialSupply = 1000
+                       } = {}) {
     await api.isReady;
     const signerAddresses = await getAddresses();
     const Alice = signerAddresses[0];
@@ -22,6 +22,20 @@ describe("ERC20", () => {
     const contractFactory = await getContractFactory("erc20", sender.address);
     const contract = await contractFactory.deploy("new", tokenName, tokenSymbol, tokenInitialSupply);
     const abi = artifacts.readArtifact("erc20");
+    const receiver = await getRandomSigner();
+
+    return { sender, contractFactory, contract, abi, receiver, Alice };
+  }
+
+  async function setupLockdrop() {
+    await api.isReady;
+    const signerAddresses = await getAddresses();
+    const Alice = signerAddresses[0];
+    const sender = await getRandomSigner(Alice, "10000 UNIT");
+    const contractFactoryLock = await getContractFactory("lock", sender.address);
+    const contractFactory = await getContractFactory("lockdrop", sender.address);
+    const contract = await contractFactory.deploy("new", );
+    const abi = artifacts.readArtifact("lockdrop");
     const receiver = await getRandomSigner();
 
     return { sender, contractFactory, contract, abi, receiver, Alice };
@@ -110,7 +124,7 @@ describe("ERC20", () => {
     expect(balanceOfResult.output).to.equal(tokenInitialSupply)
   });
 
-  it.only("Trading pair", async () => {
+  it("Trading pair", async () => {
     const tokenAParams = { tokenName: 'token a', tokenSymbol: 'TKA', tokenInitialSupply: 1234 };
     const tokenA = await setup(tokenAParams);
 
@@ -126,6 +140,11 @@ describe("ERC20", () => {
     const [tokenASymbol, tokenBSymbol] = symbolResult.output?.toHuman() as Array<String>;
     expect(tokenASymbol).to.equal(tokenAParams.tokenSymbol);
     expect(tokenBSymbol).to.equal(tokenBParams.tokenSymbol);
+  });
 
-  })
+  it.only("Lockdrop", async () => {
+    const { contract, Alice, sender } = await setupLockdrop();
+
+    await contract.tx.lock(7);
+  });
 });
