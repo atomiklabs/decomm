@@ -23,13 +23,15 @@ mod lockdrop {
         pub fn lock(&mut self) {
             let balance_to_be_locked = self.env().transferred_balance();
 
+            ink_env::debug_println!("{:?}", "yo tko");
+
             let now = self.env().block_timestamp();
             let unlock_after = now + 5;
 
             let salt = 1u32.to_le_bytes();
 
             let lock = Lock::new(self.env().caller(), unlock_after)
-                .endowment(balance_to_be_locked)
+                .endowment(balance_to_be_locked / 2)
                 .code_hash(self.lock_contract_code_hash.clone())
                 .salt_bytes(salt)
                 .instantiate()

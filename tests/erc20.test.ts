@@ -1,5 +1,7 @@
 import { expect } from "chai";
 import { artifacts, network, patract } from "redspot";
+import {BigNumber} from "@redspot/patract/types";
+import contract from "@redspot/patract/contract";
 
 const { getContractFactory, getRandomSigner } = patract;
 
@@ -34,7 +36,7 @@ describe("ERC20", () => {
     const sender = await getRandomSigner(Alice, "10000 UNIT");
     const contractFactoryLock = await getContractFactory("lock", sender.address);
     const contractFactory = await getContractFactory("lockdrop", sender.address);
-    const contract = await contractFactory.deploy("new", );
+    const contract = await contractFactory.deploy("new", contractFactoryLock.abi.project.source.wasmHash);
     const abi = artifacts.readArtifact("lockdrop");
     const receiver = await getRandomSigner();
 
@@ -143,8 +145,35 @@ describe("ERC20", () => {
   });
 
   it.only("Lockdrop", async () => {
-    const { contract, Alice, sender } = await setupLockdrop();
+    const { contract: lockdropContract, Alice, sender } = await setupLockdrop();
 
-    await contract.tx.lock(7);
+
+    const balanceResultsPre = await network.api.queryMulti([
+      [network.api.query.system.account, sender.address],
+      [network.api.query.system.account, lockdropContract.address],
+    ]);
+
+    console.log("Pre-balances:", balanceResultsPre.map(r => r.toHuman()));
+
+    // fund LockDrop contract so it has the value to pass to the Lock after creating its instance
+    await network.api.tx.balances.transfer(lockdropContract.address.toHex(), '17 UNIT').signAndSend(sender.address);
+
+    // const balanceResultsPost = await network.api.queryMulti([
+    //   [network.api.query.system.account, sender.address],
+    //   [network.api.query.system.account, lockdropContract.address],
+    // ]);
+    //
+    // console.log("Post-balances:", balanceResultsPost.map(r => r.toHuman()));
+    //
+    // // await lockdropContract.tx.lock();
+    //
+    //
+    // const balanceResultsPostLock = await network.api.queryMulti([
+    //   [network.api.query.system.account, sender.address],
+    //   [network.api.query.system.account, lockdropContract.address],
+    // ]);
+    //
+    // console.log("Post-lock-balances:", balanceResultsPostLock.map(r => r.toHuman()));
+
   });
 });
