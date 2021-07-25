@@ -1,7 +1,6 @@
 import { expect } from "chai";
 import { artifacts, network, patract } from "redspot";
-import {BigNumber} from "@redspot/patract/types";
-import contract from "@redspot/patract/contract";
+
 
 const { getContractFactory, getRandomSigner } = patract;
 
@@ -33,7 +32,7 @@ describe("ERC20", () => {
     await api.isReady;
     const signerAddresses = await getAddresses();
     const Alice = signerAddresses[0];
-    const sender = await getRandomSigner(Alice, "10000 UNIT");
+    const sender = await getRandomSigner(Alice, "100000 UNIT");
     const contractFactoryLock = await getContractFactory("lock", sender.address);
     const contractFactory = await getContractFactory("lockdrop", sender.address);
     const contract = await contractFactory.deploy("new", contractFactoryLock.abi.project.source.wasmHash);
@@ -146,26 +145,30 @@ describe("ERC20", () => {
 
   it.only("Lockdrop", async () => {
     const { contract: lockdropContract, Alice, sender } = await setupLockdrop();
-
-
+    const gasLimit = 3000 * 1000000;
     const balanceResultsPre = await network.api.queryMulti([
-      [network.api.query.system.account, sender.address],
-      [network.api.query.system.account, lockdropContract.address],
+      [api.query.system.account, sender.address],
+      [api.query.system.account, lockdropContract.address.toHuman()],
     ]);
 
     console.log("Pre-balances:", balanceResultsPre.map(r => r.toHuman()));
 
     // fund LockDrop contract so it has the value to pass to the Lock after creating its instance
-    await network.api.tx.balances.transfer(lockdropContract.address.toHex(), '17 UNIT').signAndSend(sender.address);
+    // await api.tx.balances.transfer(lockdropContract.address.toHuman(), 39_000).signAndSend(sender.address);
 
     // const balanceResultsPost = await network.api.queryMulti([
-    //   [network.api.query.system.account, sender.address],
-    //   [network.api.query.system.account, lockdropContract.address],
+    //   [api.query.system.account, sender.address],
+    //   [api.query.system.account, lockdropContract.address.toHuman()],
     // ]);
-    //
-    // console.log("Post-balances:", balanceResultsPost.map(r => r.toHuman()));
-    //
-    // // await lockdropContract.tx.lock();
+
+    // console.log("Post-balances:", balanceResultsPost.map(r => r.toHuman()), { sender: sender.address, ld: lockdropContract.address.toHuman()});
+    await lockdropContract.tx.lock({
+      gasLimit: 1_000_000_000,
+      value: 7,
+    });
+
+
+
     //
     //
     // const balanceResultsPostLock = await network.api.queryMulti([
