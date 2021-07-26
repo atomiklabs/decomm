@@ -145,7 +145,7 @@ describe("ERC20", () => {
 
   it.only("Lockdrop", async () => {
     const { contract: lockdropContract, Alice, sender } = await setupLockdrop();
-    const gasLimit = 3000 * 1000000;
+
     const balanceResultsPre = await network.api.queryMulti([
       [api.query.system.account, sender.address],
       [api.query.system.account, lockdropContract.address.toHuman()],
@@ -163,10 +163,9 @@ describe("ERC20", () => {
 
     // console.log("Post-balances:", balanceResultsPost.map(r => r.toHuman()), { sender: sender.address, ld: lockdropContract.address.toHuman()});
     await lockdropContract.tx.lock({
-      gasLimit: 1_000_000_000,
-      value: 7,
+      gasLimit: '1000000000001',
+      value: '7 UNIT',
     });
-
 
 
     //
